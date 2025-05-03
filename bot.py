@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+from aiohttp import web
 import emoji
 from prompts import SYSTEM_PROMPT
 from telegram import Update
@@ -85,16 +86,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 from telegram.error import Conflict
 
-# Запуск бота
-def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# --- Запуск Telegram-бота ---
+async def run_telegram_bot():
+    tg_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    tg_app.add_handler(CommandHandler("start", start))
+    tg_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     try:
-        app.run_polling()
+        await tg_app.initialize()
+        await tg_app.start()
+        await tg_app.updater.start_polling()
     except Conflict:
         print("⚠️ Бот уже запущен где-то ещё. Завершаем.")
 
-if __name__ == "__main__":
-    main()
+# --- HTTP-приложение для Render ---
+async def health(request):
+    return web.Response(text="Бот активен!")
+
+web_app = web.Application()  # ← эта строка ОБЯЗАТЕЛЬНА
+web_app.add_routes([web.get("/", health)])
+
+@web_app.on_startup.append
+async def on_startup(app):
+    await run_telegram_bot()
+
+app = web_app  # ← ЭТО экспортируется для Gunicorn
