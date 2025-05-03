@@ -2,9 +2,9 @@ services:
   - type: web
     name: gpt_session_restored
     env: python
-    plan: free
+    region: oregon
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python bot.py"
+    startCommand: "./start.sh"
     envVars:
       - key: OPENAI_API_KEY
         sync: false
