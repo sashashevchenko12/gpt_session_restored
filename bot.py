@@ -82,12 +82,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(f"Ошибка при запросе к OpenAI: {e}")
         await update.message.reply_text("❌ Что-то пошло не так. Попробуй ещё раз чуть позже.")
 
+from telegram.error import Conflict
+
 # Запуск бота
 def main():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+
+    try:
+        app.run_polling()
+    except Conflict:
+        print("⚠️ Бот уже запущен где-то ещё. Завершаем.")
 
 if __name__ == "__main__":
     main()
