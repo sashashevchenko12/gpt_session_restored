@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: gpt_session_restored
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python bot.py"
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: TELEGRAM_TOKEN
+        sync: false
