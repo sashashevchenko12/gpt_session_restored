@@ -55,6 +55,7 @@ history = {}
 # Обработка сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text or ""
+    print("Получено сообщение от пользователя:", user_message)
     message_lower = user_message.lower()
     chat_id = update.effective_chat.id
 
@@ -87,6 +88,8 @@ from telegram.error import Conflict
 # Запуск бота
 def main():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     try:
         app.run_polling()
