@@ -1,6 +1,6 @@
 import os
+import re
 import logging
-from aiohttp import web
 import emoji
 from prompts import SYSTEM_PROMPT
 from telegram import Update
@@ -26,7 +26,7 @@ load_dotenv()
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG
+    level=logging.INFO
 )
 
 # В .env должны быть такие строки (без кавычек):
@@ -55,7 +55,6 @@ history = {}
 # Обработка сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text or ""
-    logging.debug(f"Получено сообщение от пользователя: {user_message}")
     message_lower = user_message.lower()
     chat_id = update.effective_chat.id
 
@@ -73,50 +72,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         reply_text = completion.choices[0].message.content
         reply_text = strip_disallowed_emojis(reply_text, ALLOWED_EMOJIS)
-
-        # Ограничиваем длину ответа
-        if len(reply_text) > MAX_LENGTH:
-            reply_text = reply_text[:MAX_LENGTH]
-
+        
         history[chat_id].append({"role": "assistant", "content": reply_text})
         history[chat_id] = history[chat_id][-10:]
 
         await update.message.reply_text(reply_text.strip())
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()  # Это добавит полный трейсбек для ошибок
-        logging.error(f"GPT error: {e}")
+        logging.error(f"Ошибка при запросе к OpenAI: {e}")
         await update.message.reply_text("❌ Что-то пошло не так. Попробуй ещё раз чуть позже.")
 
-from telegram.error import Conflict
+# Запуск бота
+def main():
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# --- Запуск Telegram-бота ---
-async def run_telegram_bot():
-    tg_app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    tg_app.add_handler(CommandHandler("start", start))
-    tg_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    try:
-        await tg_app.initialize()
-        await tg_app.start()
-
-        # Убираем polling для Render
-        if os.getenv("RENDER", "false").lower() != "true":
-            await tg_app.updater.start_polling()
-
-    except Conflict:
-        logging.warning("⚠️ Бот уже запущен где-то ещё. Завершаем.")
-
-# --- HTTP-приложение для Render ---
-async def health(request):
-    return web.Response(text="Бот активен!")
-
-web_app = web.Application()
-web_app.add_routes([web.get("/", health)])
-
-@web_app.on_startup.append
-async def on_startup(app):
-    await run_telegram_bot()
-
-app = web_app  # Это экспортируется для Gunicorn
+    render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+    if render_hostname:
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=int(os.environ["PORT"]),
+            webhook_url=f"https://{render_hostname}/"
+        )
+    else:
+        app.run_polling()  # fallback на polling при локальном запуске
