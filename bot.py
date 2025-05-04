@@ -1,4 +1,6 @@
 import os
+host = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "localhost:8000")
+webhook_url = f"https://{host}/"
 import re
 import logging
 import emoji
@@ -88,12 +90,11 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
-    if render_hostname:
+    if "RENDER_EXTERNAL_HOSTNAME" in os.environ:
         app.run_webhook(
             listen="0.0.0.0",
             port=int(os.environ["PORT"]),
-            webhook_url=f"https://{render_hostname}/"
+            webhook_url=webhook_url
         )
     else:
         app.run_polling()  # fallback на polling при локальном запуске
