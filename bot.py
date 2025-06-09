@@ -28,6 +28,22 @@ import whisper
 import datetime
 import asyncio
 
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_healthcheck():
+    server = HTTPServer(("0.0.0.0", 8080), HealthHandler)
+    server.serve_forever()
+
+# запускаем в фоне, не блокируя бота
+threading.Thread(target=run_healthcheck, daemon=True).start()
+
 voice_semaphore = asyncio.Semaphore(3)  # не больше 3 голосовых одновременно
 
 def get_history_key(update: Update) -> str:
