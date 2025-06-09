@@ -1,3 +1,5 @@
+print("=== BOT STARTING ===")
+
 AUTHORIZED_USER_IDS = [5912611226]  # ID пользователя sashagosh
 from telegram.helpers import escape_markdown
 from watchdog.observers import Observer
