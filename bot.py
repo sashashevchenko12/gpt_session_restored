@@ -1,5 +1,3 @@
-print("=== BOT STARTING ===")
-
 AUTHORIZED_USER_IDS = [5912611226]  # ID пользователя sashagosh
 from telegram.helpers import escape_markdown
 from watchdog.observers import Observer
@@ -10,7 +8,11 @@ import logging
 from collections import defaultdict
 from watchdog.events import FileSystemEventHandler
 import threading
+print("=== BOT STARTING ===")
+print(f"TELEGRAM_BOT_TOKEN: {os.getenv('TELEGRAM_BOT_TOKEN')}")
+print(f"OPENAI_API_KEY: {os.getenv('OPENAI_API_KEY')}")
 import sys
+print(sys.version)
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder, CommandHandler,
