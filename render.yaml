@@ -1,12 +1,18 @@
 services:
   - type: web
-    name: gpt_session_restored
+    name: acting-session-bot
     env: python
-    region: oregon
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn --worker-class aiohttp.GunicornWebWorker bot:app"
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn bot:app --host 0.0.0.0 --port 10000
     envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false  # Не пиши токен прямо в YAML, задай через UI
       - key: OPENAI_API_KEY
         sync: false
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
+      - key: OPENAI_BASE_URL
+        sync: false  # убери, если используешь api.openai.com
+      - key: RENDER_EXTERNAL_URL
+        fromService:
+          name: acting-session-bot
+          type: web
