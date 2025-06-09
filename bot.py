@@ -1,3 +1,17 @@
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_healthcheck():
+    server = HTTPServer(("0.0.0.0", 8080), HealthHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_healthcheck, daemon=True).start()
+
 AUTHORIZED_USER_IDS = [5912611226]  # ID пользователя sashagosh
 from telegram.helpers import escape_markdown
 from watchdog.observers import Observer
@@ -27,22 +41,6 @@ import subprocess
 import whisper
 import datetime
 import asyncio
-
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
-
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
-
-def run_healthcheck():
-    server = HTTPServer(("0.0.0.0", 8080), HealthHandler)
-    server.serve_forever()
-
-# запускаем в фоне, не блокируя бота
-threading.Thread(target=run_healthcheck, daemon=True).start()
 
 voice_semaphore = asyncio.Semaphore(3)  # не больше 3 голосовых одновременно
 
