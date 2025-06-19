@@ -5,3 +5,8 @@ aiofiles
 watchdog
 git+https://github.com/openai/whisper.git
 python-dotenv
+librosa
+soundfile
+numpy
+scipy
+pydub
